@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+﻿# RD PDF - Ferramentas de PDF Offline
 
-# Run and deploy your AI Studio app
+Uma aplicação web moderna e segura para manipulação de arquivos PDF e Imagens, processada inteiramente no seu navegador (Client-side).
 
-This contains everything you need to run your app locally.
+## 🚀 Funcionalidades
+- **Juntar PDFs:** Combine múltiplos arquivos em um único documento.
+- **Dividir PDF:** Extraia páginas específicas de um PDF.
+- **Comprimir PDF:** Reduza o tamanho dos arquivos sem perder qualidade.
+- **Editar PDF:** Adicione anotações e modifique documentos.
+- **Imagem para PDF:** Converta suas fotos em documentos PDF.
+- **Anotar Imagem:** Ferramenta de edição e desenho sobre imagens.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1tVYDXLS3zoFByhPIhfqldql99d3zn7qX
+## 🛠️ Tecnologias Utilizadas
+- React 19 / Vite
+- Tailwind CSS
+- TypeScript
+- PDF-Lib / PDF.js
 
-## Run Locally
+## 🔒 Segurança e Privacidade
+O **RD PDF** processa todos os dados localmente. Seus documentos nunca saem do seu computador, garantindo 100% de privacidade.
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+Desenvolvido por **RD Engenharia**.
