@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -363,8 +364,7 @@ const ImageToPdf: React.FC = () => {
             }
 
             const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            saveAs(blob, 'rd-pdf-documento.pdf');
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
 
         } catch (e) {
             console.error(e);

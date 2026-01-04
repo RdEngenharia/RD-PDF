@@ -106,9 +106,9 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The type definitions for pdfjs-dist in this environment seem to require a 'canvas' property in RenderParameters.
-                // Adding it to satisfy the TypeScript compiler.
-                await page.render({ canvasContext: context, viewport: viewport, canvas: canvas }).promise;
+                // FIX: The RenderParameters object for `page.render` expects a `canvasContext` property.
+                // The previous code was causing a type error due to a mismatch in the expected structure.
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }
             setPageThumbnails(thumbnails);
@@ -233,8 +233,7 @@ const PdfEditor: React.FC = () => {
             }
             
             const pdfBytes = await newPdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            saveAs(blob, `rd-pdf-editado.pdf`);
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
         } catch (e) {
             console.error(e);
             setError("Ocorreu um erro ao salvar o PDF.");

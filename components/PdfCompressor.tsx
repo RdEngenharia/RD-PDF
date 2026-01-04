@@ -77,8 +77,7 @@ const PdfCompressor: React.FC = () => {
                 setCompressionResult({ originalSize, compressedSize });
             }
 
-            const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-            saveAs(blob, `rd-pdf-comprimido.pdf`);
+            const blob = new Blob([compressedPdfBytes as any], { type: 'application/pdf' });
 
         } catch (e) {
             console.error(e);

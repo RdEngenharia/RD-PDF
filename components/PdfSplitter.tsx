@@ -54,9 +54,9 @@ const PdfSplitter: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The type definitions for pdfjs-dist in this environment seem to require a 'canvas' property in RenderParameters.
-                // Adding it to satisfy the TypeScript compiler.
-                const renderContext = { canvasContext: context, viewport: viewport, canvas: canvas };
+                // FIX: The RenderParameters object for `page.render` expects a `canvasContext` property.
+                // The previous code was causing a type error due to a mismatch in the expected structure.
+                const renderContext = { canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
                 thumbnails.push({ dataUrl: canvas.toDataURL(), pageNumber: i });
             }
@@ -137,7 +137,7 @@ const PdfSplitter: React.FC = () => {
             copiedPages.forEach(page => newPdf.addPage(page));
 
             const pdfBytes = await newPdf.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
             saveAs(blob, `rd-pdf-dividido.pdf`);
         } catch (e) {
             console.error(e);
