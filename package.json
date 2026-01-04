@@ -14,7 +14,8 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "2.11.338",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "vite-plugin-top-level-await": "^1.6.0"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",

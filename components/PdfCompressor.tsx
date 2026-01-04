@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -61,27 +62,22 @@ const PdfCompressor: React.FC = () => {
 
         try {
             const arrayBuffer = await pdfFile.arrayBuffer();
-            // Carrega o documento. O pdf-lib já aplica otimizações básicas ao carregar/salvar
             const pdfDoc = await PDFDocument.load(arrayBuffer);
             
-            // Tenta comprimir removendo metadados e objetos não utilizados
-            const compressedPdfBytes = await pdfDoc.save({ 
-                useObjectStreams: true,
-                addDefaultPage: false
-            });
+            // This is a placeholder for actual compression logic which is complex.
+            // For now, pdf-lib's save method does some optimization.
+            const compressedPdfBytes = await pdfDoc.save();
 
             const originalSize = pdfFile.size;
             const compressedSize = compressedPdfBytes.length;
 
             if (compressedSize >= originalSize) {
-                setError('O PDF já está otimizado. A compressão não reduziu o tamanho consideravelmente.');
-                // Mesmo assim permitimos o download do arquivo processado
+                setError('O PDF já está otimizado. A compressão não reduziu o tamanho.');
             } else {
                 setCompressionResult({ originalSize, compressedSize });
             }
 
-            // CORREÇÃO DE TIPAGEM: Garantindo que o Uint8Array seja aceito como Blob
-            const blob = new Blob([compressedPdfBytes.buffer], { type: 'application/pdf' });
+            const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
             saveAs(blob, `rd-pdf-comprimido.pdf`);
 
         } catch (e) {
