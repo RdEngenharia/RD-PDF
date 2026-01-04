@@ -3,9 +3,10 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { UploadIcon, SpinnerIcon, DownloadIcon, TypeIcon, TrashIcon, RotateLeftIcon } from './Icons';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PageThumbnail {
     id: number; // Original page number, stable ID
@@ -105,7 +106,6 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters type from pdfjs-dist requires the 'canvas' property.
                 await page.render({ canvas, canvasContext: context, viewport: viewport }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }

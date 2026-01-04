@@ -1,12 +1,12 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // Removida a extensão .tsx para evitar avisos do Vite
+import App from './App';
 import './index.css';
 
 const rootElement = document.getElementById('root');
-
 if (!rootElement) {
-  throw new Error("Não foi possível encontrar o elemento root para montar a aplicação");
+  throw new Error("Could not find root element to mount to");
 }
 
 const root = ReactDOM.createRoot(rootElement);
