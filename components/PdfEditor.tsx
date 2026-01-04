@@ -1,11 +1,11 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
 import { UploadIcon, SpinnerIcon, DownloadIcon, TypeIcon, TrashIcon, RotateLeftIcon } from './Icons';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+// FIX: Usando CDN para o worker para garantir funcionamento no GitHub Pages
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface PageThumbnail {
     id: number; // Original page number, stable ID
@@ -87,12 +87,15 @@ const PdfEditor: React.FC = () => {
 
     const renderPdfPages = useCallback(async (file: File) => {
         setIsLoading(true);
-        resetState();
+        setError(null);
         setPdfFile(file);
         
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            const loadingTask = pdfjsLib.getDocument({
+                data: arrayBuffer,
+                useSystemFonts: true
+            });
             const pdf = await loadingTask.promise;
             
             const thumbnails: PageThumbnail[] = [];
@@ -105,8 +108,8 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters type from pdfjs-dist requires the 'canvas' property.
-                await page.render({ canvas, canvasContext: context, viewport: viewport }).promise;
+                // FIX: Parâmetros de renderização ajustados
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }
             setPageThumbnails(thumbnails);
@@ -222,7 +225,7 @@ const PdfEditor: React.FC = () => {
                     const { width, height } = page.getSize();
                     page.drawText(textEl.text, {
                         x: (textEl.x / 100) * width,
-                        y: height - (textEl.y / 100) * height, // Position from top-left
+                        y: height - (textEl.y / 100) * height, 
                         font: helveticaFont,
                         size: textEl.fontSize,
                         color: rgb(0, 0, 0),
@@ -231,7 +234,8 @@ const PdfEditor: React.FC = () => {
             }
             
             const pdfBytes = await newPdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            // FIX: Usando .buffer para evitar erro de tipo no Blob
+            const blob = new Blob([pdfBytes.buffer], { type: 'application/pdf' });
             saveAs(blob, `rd-pdf-editado.pdf`);
         } catch (e) {
             console.error(e);

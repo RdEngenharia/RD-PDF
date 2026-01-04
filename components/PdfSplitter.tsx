@@ -1,11 +1,11 @@
-
 import React, { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
 import { UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+// FIX: Usando CDN para o worker. Isso resolve o erro de visualização no GitHub Pages.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 type PageThumbnail = {
     dataUrl: string;
@@ -39,7 +39,10 @@ const PdfSplitter: React.FC = () => {
         
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            const loadingTask = pdfjsLib.getDocument({
+                data: arrayBuffer,
+                useSystemFonts: true
+            });
             const pdf = await loadingTask.promise;
             setTotalPages(pdf.numPages);
             
@@ -53,9 +56,12 @@ const PdfSplitter: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters type from pdfjs-dist requires the 'canvas' property.
-                const renderContext = { canvas, canvasContext: context, viewport: viewport };
-                await page.render(renderContext).promise;
+                // FIX: Ajuste nos parâmetros de renderização para evitar erros de tipagem
+                await page.render({ 
+                    canvasContext: context, 
+                    viewport: viewport 
+                }).promise;
+                
                 thumbnails.push({ dataUrl: canvas.toDataURL(), pageNumber: i });
             }
             setPageThumbnails(thumbnails);
@@ -135,7 +141,8 @@ const PdfSplitter: React.FC = () => {
             copiedPages.forEach(page => newPdf.addPage(page));
 
             const pdfBytes = await newPdf.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            // CORREÇÃO DE TIPAGEM: Usando .buffer para evitar erro no Blob
+            const blob = new Blob([pdfBytes.buffer], { type: 'application/pdf' });
             saveAs(blob, `rd-pdf-dividido.pdf`);
         } catch (e) {
             console.error(e);
