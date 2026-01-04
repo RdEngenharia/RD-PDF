@@ -3,10 +3,10 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { UploadIcon, SpinnerIcon, DownloadIcon, TypeIcon, TrashIcon, RotateLeftIcon } from './Icons';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface PageThumbnail {
     id: number; // Original page number, stable ID
@@ -106,8 +106,7 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters object for `page.render` expects a `canvasContext` property.
-                // The previous code was causing a type error due to a mismatch in the expected structure.
+                // FIX: The type definition for `page.render` seems to be incorrect, requiring a 'canvas' property. Adding it to satisfy the type checker.
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }
@@ -234,6 +233,7 @@ const PdfEditor: React.FC = () => {
             
             const pdfBytes = await newPdfDoc.save();
             const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            saveAs(blob, `rd-pdf-editado.pdf`);
         } catch (e) {
             console.error(e);
             setError("Ocorreu um erro ao salvar o PDF.");

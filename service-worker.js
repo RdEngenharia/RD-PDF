@@ -42,6 +42,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  const requestUrl = new URL(event.request.url);
+
+  // Deixa o navegador lidar com requisições para CDNs para evitar bloqueios
+  if (requestUrl.hostname === 'unpkg.com') {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

@@ -365,6 +365,7 @@ const ImageToPdf: React.FC = () => {
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            saveAs(blob, 'rd-pdf-documento.pdf');
 
         } catch (e) {
             console.error(e);
@@ -541,7 +542,7 @@ const ImageToPdf: React.FC = () => {
                                 </div>
                             ))}
                             <label htmlFor="image-upload-add" className="cursor-pointer w-24 h-32 flex-shrink-0"><div className="border-2 border-dashed border-slate-600 rounded-md h-full text-center hover:border-indigo-500 flex flex-col items-center justify-center text-slate-500 hover:text-indigo-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                                 <span className="text-xs mt-1">Adicionar</span>
                             </div></label>
                             <input id="image-upload-add" type="file" accept="image/png, image/jpeg" multiple className="hidden" onChange={handleFileChange} />

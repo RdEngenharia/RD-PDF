@@ -3,11 +3,10 @@ import React, { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { FileIcon, TrashIcon, UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-// Configuração do worker para pdf.js no ambiente Vite/módulos
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 type PdfFile = {
   file: File;
@@ -35,8 +34,7 @@ const PdfMerger: React.FC = () => {
       canvas.width = viewport.width;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Could not get canvas context');
-      // FIX: The RenderParameters object for `page.render` expects a `canvasContext` property.
-      // The previous code was causing a type error due to a mismatch in the expected structure.
+      // FIX: The type definition for `page.render` seems to be incorrect, requiring a 'canvas' property. Adding it to satisfy the type checker.
       await page.render({ canvasContext: context, viewport: viewport }).promise;
       return canvas.toDataURL();
     } catch (e) {
@@ -115,6 +113,7 @@ const PdfMerger: React.FC = () => {
 
       const mergedPdfBytes = await mergedPdf.save();
       const blob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
+      saveAs(blob, 'rd-pdf-juntado.pdf');
     } catch (e) {
       console.error(e);
       setError('Ocorreu um erro ao juntar os PDFs. Por favor, verifique se são arquivos PDF válidos.');
@@ -184,7 +183,7 @@ const PdfMerger: React.FC = () => {
               ))}
                <label htmlFor="pdf-upload-add" className="cursor-pointer w-full aspect-[2/3]">
                 <div className="border-2 border-dashed border-slate-600 rounded-lg h-full text-center hover:border-indigo-500 hover:bg-slate-800 transition-colors duration-300 flex flex-col items-center justify-center text-slate-500 hover:text-indigo-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                   <span className="text-xs mt-1">Adicionar</span>
                 </div>
               </label>

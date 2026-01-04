@@ -3,10 +3,10 @@ import React, { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 type PageThumbnail = {
     dataUrl: string;
@@ -54,9 +54,8 @@ const PdfSplitter: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters object for `page.render` expects a `canvasContext` property.
-                // The previous code was causing a type error due to a mismatch in the expected structure.
-                const renderContext = { canvasContext: context, viewport: viewport };
+                // FIX: The type definition for `page.render` seems to be incorrect, requiring a 'canvas' property. Adding it to satisfy the type checker.
+                const renderContext = { canvasContext: context, viewport: viewport, canvas };
                 await page.render(renderContext).promise;
                 thumbnails.push({ dataUrl: canvas.toDataURL(), pageNumber: i });
             }
