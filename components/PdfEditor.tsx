@@ -106,7 +106,8 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The type definition for 'RenderParameters' in this environment requires a 'canvas' property. Adding it to resolve the TypeScript error.
+                // FIX: The type definitions for pdfjs-dist in this environment seem to require a 'canvas' property in RenderParameters.
+                // Adding it to satisfy the TypeScript compiler.
                 await page.render({ canvasContext: context, viewport: viewport, canvas: canvas }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }

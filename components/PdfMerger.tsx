@@ -35,7 +35,8 @@ const PdfMerger: React.FC = () => {
       canvas.width = viewport.width;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Could not get canvas context');
-      // FIX: The type definition for 'RenderParameters' in this environment requires a 'canvas' property. Adding it to resolve the TypeScript error.
+      // FIX: The type definitions for pdfjs-dist in this environment seem to require a 'canvas' property in RenderParameters.
+      // Adding it to satisfy the TypeScript compiler.
       await page.render({ canvasContext: context, viewport: viewport, canvas: canvas }).promise;
       return canvas.toDataURL();
     } catch (e) {
