@@ -130,7 +130,6 @@ const ImageAnnotator: React.FC = () => {
     const getTransformedPoint = (x: number, y: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
-        // FIX: Added a null check for getContext to prevent potential crashes.
         const ctx = canvas.getContext('2d');
         if (!ctx) return { x: 0, y: 0 };
         const transform = ctx.getTransform();
@@ -142,7 +141,6 @@ const ImageAnnotator: React.FC = () => {
     const worldToScreen = (x: number, y: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
-        // FIX: Added a null check for getContext to prevent potential crashes.
         const ctx = canvas.getContext('2d');
         if (!ctx) return { x: 0, y: 0 };
         const transform = ctx.getTransform();
@@ -153,7 +151,6 @@ const ImageAnnotator: React.FC = () => {
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !image) return;
-        // FIX: Added a null check for getContext to prevent potential crashes.
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         
@@ -255,7 +252,6 @@ const ImageAnnotator: React.FC = () => {
             setAnnotations(prev => prev.filter(a => a.id !== finalAnnotation.id));
         } else {
             const tempCanvas = document.createElement('canvas');
-            // FIX: Added a null check for getContext to prevent potential crashes.
             const tempCtx = tempCanvas.getContext('2d');
             if (tempCtx) {
                 tempCtx.font = `${finalAnnotation.fontSize}px sans-serif`;
@@ -327,7 +323,7 @@ const ImageAnnotator: React.FC = () => {
                 const dy = point.y - startPoint.current.y;
                 setAnnotations(prev => prev.map(ann => 
                     ann.id === selectedAnnotationId 
-                    ? { ...ann, x: dragStartAnnotationPos.current.x + dx, y: dragStartAnnotationPos.current.y + dy } 
+                    ? { ...ann, x: dragStartAnnotationPos.current!.x + dx, y: dragStartAnnotationPos.current!.y + dy } 
                     : ann
                 ));
             } else if (tool === 'rect' || tool === 'arrow') {
@@ -373,7 +369,6 @@ const ImageAnnotator: React.FC = () => {
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = image.naturalWidth;
         tempCanvas.height = image.naturalHeight;
-        // FIX: Added a null check for getContext to prevent potential crashes.
         const ctx = tempCanvas.getContext('2d');
         if (!ctx) {
             setError('Não foi possível criar o contexto do canvas para download.');

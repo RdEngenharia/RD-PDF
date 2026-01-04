@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -410,7 +409,7 @@ const ImageToPdf: React.FC = () => {
     };
 
     const handleDragSort = () => {
-        if (draggedItemIndex.current === null || draggedOverItemIndex.current === null) return;
+        if (draggedItemIndex.current === null || draggedOverItemIndex.current === null || activePageIndex === null) return;
         const items = [...pages];
         const draggedItem = items.splice(draggedItemIndex.current, 1)[0];
         items.splice(draggedOverItemIndex.current, 0, draggedItem);
@@ -513,7 +512,7 @@ const ImageToPdf: React.FC = () => {
                                             <button onClick={handleRemoveBackground} disabled={isAiLoading} className="flex items-center justify-center gap-2 p-2 bg-purple-600 rounded hover:bg-purple-500 disabled:bg-slate-600 text-sm font-semibold">{isAiLoading ? <SpinnerIcon /> : <MagicWandIcon />} Remover Fundo</button>
                                             <button onClick={() => setIsErasing(true)} className="flex items-center justify-center gap-2 p-2 bg-slate-600 rounded hover:bg-slate-500 text-sm font-semibold"><EraserIcon className="w-4 h-4" /> Borracha</button>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2 mt-3"><button onClick={() => updateActivePage({ rotation: (activePage?.rotation + 270) % 360 })} className="flex items-center justify-center gap-2 p-2 bg-slate-600 rounded hover:bg-slate-500"><RotateLeftIcon/> Rotação</button><button onClick={() => updateActivePage({ rotation: (activePage?.rotation + 90) % 360 })} className="flex items-center justify-center gap-2 p-2 bg-slate-600 rounded hover:bg-slate-500"><RotateRightIcon/> Rotação</button></div>
+                                        <div className="grid grid-cols-2 gap-2 mt-3"><button onClick={() => activePage && updateActivePage({ rotation: (activePage.rotation + 270) % 360 })} className="flex items-center justify-center gap-2 p-2 bg-slate-600 rounded hover:bg-slate-500"><RotateLeftIcon/> Rotação</button><button onClick={() => activePage && updateActivePage({ rotation: (activePage.rotation + 90) % 360 })} className="flex items-center justify-center gap-2 p-2 bg-slate-600 rounded hover:bg-slate-500"><RotateRightIcon/> Rotação</button></div>
                                         <div className="mt-3"><label className="block text-sm font-medium text-slate-400 mb-1">Filtros Manuais</label><div className="grid grid-cols-2 gap-2">
                                             <button onClick={() => updateActivePage({ filter: 'none' })} className={`p-2 text-xs rounded ${activePage?.filter === 'none' ? 'bg-indigo-600' : 'bg-slate-600 hover:bg-slate-500'}`}>Original</button>
                                             <button onClick={() => updateActivePage({ filter: 'grayscale' })} className={`p-2 text-xs rounded ${activePage?.filter === 'grayscale' ? 'bg-indigo-600' : 'bg-slate-600 hover:bg-slate-500'}`}>Tons de Cinza</button>

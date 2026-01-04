@@ -54,8 +54,8 @@ const PdfSplitter: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
-                // FIX: The RenderParameters type requires the 'canvas' property in addition to 'canvasContext' and 'viewport'.
-                const renderContext = { canvas, canvasContext: context, viewport: viewport };
+                // FIX: The type definition for 'RenderParameters' in this environment requires a 'canvas' property. Adding it to resolve the TypeScript error.
+                const renderContext = { canvasContext: context, viewport: viewport, canvas: canvas };
                 await page.render(renderContext).promise;
                 thumbnails.push({ dataUrl: canvas.toDataURL(), pageNumber: i });
             }
