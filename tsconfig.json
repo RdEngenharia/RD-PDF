@@ -17,6 +17,12 @@
     "jsx": "react-jsx"
   },
   "include": ["."],
-  "exclude": ["node_modules", "dist"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "vite.config.ts",
+    "tailwind.config.js",
+    "postcss.config.js"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

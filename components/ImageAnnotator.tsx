@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { saveAs } from 'file-saver';
 import { UploadIcon, DownloadIcon, RectangleIcon, TypeIcon, ArrowUpRightIcon, MoveIcon, ZoomInIcon, EraserIcon } from './Icons';
@@ -131,7 +130,9 @@ const ImageAnnotator: React.FC = () => {
     const getTransformedPoint = (x: number, y: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
-        const ctx = canvas.getContext('2d')!;
+        // FIX: Added a null check for getContext to prevent potential crashes.
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return { x: 0, y: 0 };
         const transform = ctx.getTransform();
         const invertedTransform = transform.inverse();
         const transformedPoint = new DOMPoint(x, y).matrixTransform(invertedTransform);
@@ -141,7 +142,9 @@ const ImageAnnotator: React.FC = () => {
     const worldToScreen = (x: number, y: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
-        const ctx = canvas.getContext('2d')!;
+        // FIX: Added a null check for getContext to prevent potential crashes.
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return { x: 0, y: 0 };
         const transform = ctx.getTransform();
         const screenPoint = new DOMPoint(x, y).matrixTransform(transform);
         return { x: screenPoint.x, y: screenPoint.y };
@@ -150,7 +153,9 @@ const ImageAnnotator: React.FC = () => {
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !image) return;
-        const ctx = canvas.getContext('2d')!;
+        // FIX: Added a null check for getContext to prevent potential crashes.
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
         
         canvas.width = canvas.parentElement!.clientWidth;
         canvas.height = canvas.parentElement!.clientHeight;
@@ -250,9 +255,12 @@ const ImageAnnotator: React.FC = () => {
             setAnnotations(prev => prev.filter(a => a.id !== finalAnnotation.id));
         } else {
             const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d')!;
-            tempCtx.font = `${finalAnnotation.fontSize}px sans-serif`;
-            finalAnnotation.height = getTextBlockHeight(tempCtx, finalAnnotation.text!, finalAnnotation.width, finalAnnotation.fontSize!, finalAnnotation.fontSize! * 1.2);
+            // FIX: Added a null check for getContext to prevent potential crashes.
+            const tempCtx = tempCanvas.getContext('2d');
+            if (tempCtx) {
+                tempCtx.font = `${finalAnnotation.fontSize}px sans-serif`;
+                finalAnnotation.height = getTextBlockHeight(tempCtx, finalAnnotation.text!, finalAnnotation.width, finalAnnotation.fontSize!, finalAnnotation.fontSize! * 1.2);
+            }
             
             const isExisting = annotations.some(a => a.id === finalAnnotation.id);
             if (isExisting) {
@@ -365,7 +373,12 @@ const ImageAnnotator: React.FC = () => {
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = image.naturalWidth;
         tempCanvas.height = image.naturalHeight;
-        const ctx = tempCanvas.getContext('2d')!;
+        // FIX: Added a null check for getContext to prevent potential crashes.
+        const ctx = tempCanvas.getContext('2d');
+        if (!ctx) {
+            setError('Não foi possível criar o contexto do canvas para download.');
+            return;
+        }
         
         ctx.drawImage(imageRef.current, 0, 0);
         annotations.forEach(ann => {
