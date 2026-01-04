@@ -1,11 +1,12 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
 import { FileIcon, TrashIcon, UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-// FIX: Usando CDN para o worker. Isso resolve o erro "Setting up fake worker failed" no GitHub Pages.
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// Configuração do worker para pdf.js no ambiente Vite/módulos
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 type PdfFile = {
   file: File;
@@ -24,29 +25,17 @@ const PdfMerger: React.FC = () => {
   const generatePreview = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      // Configuração para garantir que o PDF seja lido corretamente
-      const loadingTask = pdfjsLib.getDocument({
-        data: arrayBuffer,
-        useSystemFonts: true
-      });
-      
+      const loadingTask = pdfjsLib.getDocument(arrayBuffer);
       const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1); 
+      const page = await pdf.getPage(1); // Get the first page
       const viewport = page.getViewport({ scale: 0.4 });
-      
       const canvas = document.createElement('canvas');
       canvas.height = viewport.height;
       canvas.width = viewport.width;
-      
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Could not get canvas context');
-      
-      // Renderização da página no canvas para gerar a imagem de preview
-      await page.render({ 
-        canvasContext: context, 
-        viewport: viewport 
-      }).promise;
-      
+      // FIX: The RenderParameters type from pdfjs-dist requires the 'canvas' property.
+      await page.render({ canvas, canvasContext: context, viewport: viewport }).promise;
       return canvas.toDataURL();
     } catch (e) {
         console.error("Failed to generate preview for", file.name, e);
