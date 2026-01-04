@@ -26,7 +26,7 @@ const PdfMerger: React.FC = () => {
   const generatePreview = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+      const loadingTask = pdfjsLib.getDocument(new Uint8Array(arrayBuffer));
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1); // Get the first page
       const viewport = page.getViewport({ scale: 0.4 });
@@ -35,6 +35,7 @@ const PdfMerger: React.FC = () => {
       canvas.width = viewport.width;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Could not get canvas context');
+      // FIX: The RenderParameters type requires the 'canvas' property in addition to 'canvasContext' and 'viewport'.
       await page.render({ canvas, canvasContext: context, viewport: viewport }).promise;
       return canvas.toDataURL();
     } catch (e) {

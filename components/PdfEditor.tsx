@@ -93,7 +93,7 @@ const PdfEditor: React.FC = () => {
         
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            const loadingTask = pdfjsLib.getDocument(new Uint8Array(arrayBuffer));
             const pdf = await loadingTask.promise;
             
             const thumbnails: PageThumbnail[] = [];
@@ -106,6 +106,7 @@ const PdfEditor: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
+                // FIX: The RenderParameters type requires the 'canvas' property in addition to 'canvasContext' and 'viewport'.
                 await page.render({ canvas, canvasContext: context, viewport: viewport }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }

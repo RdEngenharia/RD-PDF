@@ -40,7 +40,7 @@ const PdfSplitter: React.FC = () => {
         
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+            const loadingTask = pdfjsLib.getDocument(new Uint8Array(arrayBuffer));
             const pdf = await loadingTask.promise;
             setTotalPages(pdf.numPages);
             
@@ -54,6 +54,7 @@ const PdfSplitter: React.FC = () => {
                 const context = canvas.getContext('2d');
                 if (!context) continue;
 
+                // FIX: The RenderParameters type requires the 'canvas' property in addition to 'canvasContext' and 'viewport'.
                 const renderContext = { canvas, canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
                 thumbnails.push({ dataUrl: canvas.toDataURL(), pageNumber: i });
