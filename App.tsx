@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import PdfMerger from './components/PdfMerger';
 import ImageToPdf from './components/ImageToPdf';
@@ -16,27 +14,22 @@ const App: React.FC = () => {
 
   const renderTool = () => {
     switch (activeTool) {
-      case 'merge':
-        return <PdfMerger />;
-      case 'split':
-        return <PdfSplitter />;
-      case 'compress':
-        return <PdfCompressor />;
-      case 'edit':
-        return <PdfEditor />;
-      case 'image':
-        return <ImageToPdf />;
-      case 'annotate':
-        return <ImageAnnotator />;
-      default:
-        return <PdfMerger />;
+      case 'merge': return <PdfMerger />;
+      case 'split': return <PdfSplitter />;
+      case 'compress': return <PdfCompressor />;
+      case 'edit': return <PdfEditor />;
+      case 'image': return <ImageToPdf />;
+      case 'annotate': return <ImageAnnotator />;
+      default: return <PdfMerger />;
     }
   };
 
-  // FIX: The error on line 44 was misleading. The actual issue was with `React.cloneElement` below.
-  // The type of the `icon` prop was too generic (`React.ReactElement`), causing TypeScript to fail when trying to add a `className` prop.
-  // I have corrected the type definition for the `icon` prop in the component's signature to `React.ReactElement<{ className?: string }>`.
-  const ToolButton = ({ tool, label, icon }: { tool: Tool; label: string; icon: React.ReactElement<{ className?: string }> }) => (
+  // Correção de Tipagem: Usando React.ReactElement e especificando que aceita className
+  const ToolButton = ({ tool, label, icon }: { 
+    tool: Tool; 
+    label: string; 
+    icon: React.ReactElement<any> 
+  }) => (
     <button
       onClick={() => setActiveTool(tool)}
       className={`p-2 md:p-3 rounded-lg font-semibold transition-all duration-300 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 text-center ${

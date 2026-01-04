@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -6,44 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RD PDF - Ferramentas PDF Offline</title>
     
-    <!-- PWA Manifest and Theme -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#4f46e5" />
     
-    <!-- iOS PWA Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/images/icon-192.png" />
     
-<<<<<<< HEAD
-    
-=======
     <link rel="stylesheet" href="/index.css">
 
->>>>>>> e9d5cb6e5b5c8b3574bbe44859be9598c0183cba
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "pdf-lib": "https://esm.sh/pdf-lib@^1.17.1",
-    "file-saver": "https://esm.sh/file-saver@^2.0.5",
-    "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.530",
-    "@imgly/background-removal": "https://esm.sh/@imgly/background-removal@^1.7.0",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
-<<<<<<< HEAD
-<link rel="stylesheet" href="/index.css">
-=======
->>>>>>> e9d5cb6e5b5c8b3574bbe44859be9598c0183cba
-</head>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "pdf-lib": "https://esm.sh/pdf-lib@^1.17.1",
+        "file-saver": "https://esm.sh/file-saver@^2.0.5",
+        "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.530",
+        "@imgly/background-removal": "https://esm.sh/@imgly/background-removal@^1.7.0",
+        "vite": "https://esm.sh/vite@^7.3.0",
+        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+      }
+    }
+    </script>
+  </head>
   <body class="bg-slate-900 text-white">
     <div id="root"></div>
+    
     <script type="module" src="/index.tsx"></script>
+    
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
