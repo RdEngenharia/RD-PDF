@@ -3,10 +3,11 @@ import React, { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Configura o Vite para usar o worker local, resolvendo problemas de CORS/CSP da CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 type PageThumbnail = {
     dataUrl: string;
@@ -130,7 +131,8 @@ const PdfSplitter: React.FC = () => {
             const pdfDoc = await PDFDocument.load(arrayBuffer);
 
             const newPdf = await PDFDocument.create();
-            const sortedPageIndices = Array.from(selectedPages).sort((a, b) => a - b).map(n => n - 1);
+            // FIX: Explicitly type `a`, `b`, and `n` as numbers to prevent TypeScript errors.
+            const sortedPageIndices = Array.from(selectedPages).sort((a: number, b: number) => a - b).map((n: number) => n - 1);
             
             const copiedPages = await newPdf.copyPages(pdfDoc, sortedPageIndices);
             copiedPages.forEach(page => newPdf.addPage(page));

@@ -3,10 +3,11 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { UploadIcon, SpinnerIcon, DownloadIcon, TypeIcon, TrashIcon, RotateLeftIcon } from './Icons';
 
-// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Configura o Vite para usar o worker local, resolvendo problemas de CORS/CSP da CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PageThumbnail {
     id: number; // Original page number, stable ID
@@ -107,7 +108,7 @@ const PdfEditor: React.FC = () => {
                 if (!context) continue;
 
                 // FIX: The type definition for `page.render` seems to be incorrect, requiring a 'canvas' property. Adding it to satisfy the type checker.
-                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                await page.render({ canvasContext: context, viewport: viewport, }).promise;
                 thumbnails.push({ id: i, dataUrl: canvas.toDataURL(), width: viewport.width, height: viewport.height, rotation: 0 });
             }
             setPageThumbnails(thumbnails);

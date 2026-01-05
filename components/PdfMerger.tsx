@@ -3,10 +3,11 @@ import React, { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.js?url';
 import { FileIcon, TrashIcon, UploadIcon, SpinnerIcon, DownloadIcon } from './Icons';
 
-// Use o CDN para evitar que o Service Worker do PWA bloqueie o arquivo local
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Configura o Vite para usar o worker local, resolvendo problemas de CORS/CSP da CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 type PdfFile = {
   file: File;
@@ -35,7 +36,7 @@ const PdfMerger: React.FC = () => {
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Could not get canvas context');
       // FIX: The type definition for `page.render` seems to be incorrect, requiring a 'canvas' property. Adding it to satisfy the type checker.
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      await page.render({ canvasContext: context, viewport: viewport, }).promise;
       return canvas.toDataURL();
     } catch (e) {
         console.error("Failed to generate preview for", file.name, e);

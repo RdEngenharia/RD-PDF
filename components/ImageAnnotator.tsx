@@ -371,17 +371,46 @@ const ImageAnnotator: React.FC = () => {
         tempCanvas.height = image.naturalHeight;
         const ctx = tempCanvas.getContext('2d');
         if (!ctx) {
-            setError('Não foi possível criar o contexto do canvas para download.');
+            setError("Não foi possível criar o contexto do canvas para download.");
             return;
         }
-        
+        // Draw background for JPEG
+        if (format === 'jpeg') {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        }
+
+        // 1. Draw original image
         ctx.drawImage(imageRef.current, 0, 0);
-        annotations.forEach(ann => {
+
+        // 2. Apply eraser annotations
+        annotations.filter(a => a.type === 'eraser').forEach(ann => {
+             if (ann.path && ann.path.length > 1) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+                ctx.lineWidth = ann.strokeWidth!;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(ann.path[0].x, ann.path[0].y);
+                for (let i = 1; i < ann.path.length; i++) {
+                    ctx.lineTo(ann.path[i].x, ann.path[i].y);
+                }
+                ctx.stroke();
+                ctx.globalCompositeOperation = 'source-over';
+            }
+        });
+
+        // 3. Draw other annotations on top
+        annotations.filter(a => a.type !== 'eraser').forEach(ann => {
             ctx.strokeStyle = ann.color;
             ctx.fillStyle = ann.color;
-            ctx.lineWidth = 4;
-            switch(ann.type) { 
-                case 'rect': ctx.strokeRect(ann.x, ann.y, ann.width, ann.height); break;
+            ctx.lineWidth = 4; // Consistent width for download
+
+            switch (ann.type) {
+                case 'rect':
+                    ctx.strokeRect(ann.x, ann.y, ann.width, ann.height);
+                    break;
                 case 'arrow':
                     const headlen = 15;
                     const dx = ann.x + ann.width - ann.x;
@@ -391,260 +420,108 @@ const ImageAnnotator: React.FC = () => {
                     ctx.lineTo(ann.x + ann.width - headlen * Math.cos(angle - Math.PI / 6), ann.y + ann.height - headlen * Math.sin(angle - Math.PI / 6));
                     ctx.moveTo(ann.x + ann.width, ann.y + ann.height);
                     ctx.lineTo(ann.x + ann.width - headlen * Math.cos(angle + Math.PI / 6), ann.y + ann.height - headlen * Math.sin(angle + Math.PI / 6));
-                    ctx.stroke(); break;
+                    ctx.stroke();
+                    break;
                 case 'text':
                     ctx.font = `${ann.fontSize}px sans-serif`;
                     ctx.textBaseline = 'top';
                     wrapText(ctx, ann.text || '', ann.x, ann.y, ann.width, ann.fontSize! * 1.2);
                     break;
-                case 'eraser':
-                    ctx.globalCompositeOperation = 'destination-out';
-                    ctx.strokeStyle = 'rgba(0,0,0,1)';
-                    ctx.lineWidth = ann.strokeWidth!;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    if (ann.path && ann.path.length > 1) {
-                        ctx.beginPath();
-                        ctx.moveTo(ann.path[0].x, ann.path[0].y);
-                        for (let i = 1; i < ann.path.length; i++) {
-                            ctx.lineTo(ann.path[i].x, ann.path[i].y);
-                        }
-                        ctx.stroke();
-                    }
-                    ctx.globalCompositeOperation = 'source-over';
-                    break;
             }
         });
-        const mimeType = `image/${format}`;
-        const filename = `anotado_${image.file.name.replace(/\.[^/.]+$/, "")}.${format}`;
-        tempCanvas.toBlob((blob) => { if (blob) saveAs(blob, filename); }, mimeType, 0.9);
+
+        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const fileName = `rd-pdf-anotado.${format}`;
+        tempCanvas.toBlob((blob) => {
+            if (blob) {
+                saveAs(blob, fileName);
+            }
+        }, mimeType, 0.95);
     };
-
-    const ToolButton = ({ self, title, label, children }: { self: Tool; title: string; label: string; children: React.ReactNode; }) => (
-        <button onClick={() => setTool(self)} title={title}
-            className={`flex flex-col items-center justify-center gap-1 p-1 text-xs font-semibold rounded h-16 w-full transition-colors ${tool === self ? 'bg-indigo-600 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
-            {children}
-            <span className="text-center leading-tight">{label}</span>
-        </button>
-    );
-
-    const getCursor = () => {
-        if (editingAnnotation) return 'default';
-        if (tool === 'eraser') return 'none'; // Custom cursor will be rendered
-        switch (tool) {
-            case 'zoom': return 'ns-resize';
-            case 'select': return 'move';
-            case 'text': return 'text';
-            case 'rect': case 'arrow': return 'crosshair';
-            default: return 'default';
-        }
-    };
-
-    const selectedAnnotation = annotations.find(a => a.id === selectedAnnotationId);
-    let editButtonPosition: {left: string, top: string, transform: string} | null = null;
-    if (selectedAnnotation) {
-        const screenPoint = worldToScreen(selectedAnnotation.x + selectedAnnotation.width / 2, selectedAnnotation.y + selectedAnnotation.height);
-        editButtonPosition = {
-            left: `${screenPoint.x}px`,
-            top: `${screenPoint.y + 5}px`,
-            transform: 'translateX(-50%)'
-        };
-    }
 
     return (
-        <div className="relative bg-slate-800/50 p-6 md:p-8 rounded-2xl shadow-xl w-full mx-auto animate-fade-in">
+        <div className="relative bg-slate-800/50 p-6 md:p-8 rounded-2xl shadow-xl w-full mx-auto animate-fade-in flex flex-col gap-4"
+             onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+             onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+             onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); processFile(e.dataTransfer.files?.[0] || null); }}>
+
+            {isDragging && (<div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center rounded-2xl z-20 pointer-events-none"><div className="text-center"><UploadIcon className="mx-auto w-16 h-16 text-indigo-400" /><p className="mt-4 text-lg font-semibold text-slate-200">Solte a imagem aqui</p></div></div>)}
+            
             {!image ? (
-                <div onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }} onDragOver={(e) => e.preventDefault()} onDragLeave={() => setIsDragging(false)} onDrop={(e) => { e.preventDefault(); setIsDragging(false); processFile(e.dataTransfer.files?.[0] || null); }}>
-                    <label htmlFor="image-annotate-upload" className="w-full cursor-pointer"><div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-300 ${isDragging ? 'border-indigo-500 bg-slate-800' : 'border-slate-600 hover:border-indigo-500'}`}>
-                        <UploadIcon className="mx-auto" /><p className="mt-2 text-slate-300"><span className="font-semibold text-indigo-400">Clique para carregar</span> ou arraste uma imagem</p><p className="text-xs text-slate-500">Adicione caixas, setas e texto para destacar informações</p>
+                 <div className="flex flex-col items-center">
+                    <label htmlFor="image-annotator-upload" className="w-full cursor-pointer"><div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-indigo-500 hover:bg-slate-800 transition-colors duration-300">
+                        <UploadIcon className="mx-auto" /><p className="mt-2 text-slate-300"><span className="font-semibold text-indigo-400">Clique para carregar</span> ou arraste e solte uma imagem</p><p className="text-xs text-slate-500">Adicione anotações, textos e formas</p>
                     </div></label>
-                    <input id="image-annotate-upload" type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => processFile(e.target.files?.[0] || null)} />
+                    <input id="image-annotator-upload" type="file" accept="image/*" className="hidden" onChange={(e) => processFile(e.target.files?.[0] || null)} />
                 </div>
             ) : (
-                <div className="flex flex-col lg:flex-row gap-8">
-                    <div className="flex-grow lg:w-2/3 bg-slate-900/50 rounded-lg flex items-center justify-center relative min-h-[40vh] touch-none overflow-hidden">
-                        <canvas ref={canvasRef}
-                            style={{ cursor: getCursor() }}
-                            onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}
-                            onClick={handleCanvasClick}
-                        />
-                         {editingAnnotation && <TextEditor key={editingAnnotation.id} annotation={editingAnnotation} onAnnotationChange={setEditingAnnotation} onFinish={finishEditingText} worldToScreen={worldToScreen} zoom={zoom} />}
-                         {selectedAnnotation && selectedAnnotation.type === 'text' && !editingAnnotation && editButtonPosition && (
-                            <button
-                                onClick={() => {
-                                    setEditingAnnotation(selectedAnnotation);
-                                    setSelectedAnnotationId(null);
-                                }}
+                <>
+                    {/* Toolbar */}
+                    <div className="flex flex-wrap items-center gap-4 bg-slate-900/50 p-3 rounded-lg">
+                        {/* Tool selection */}
+                        <div className="flex items-center gap-1 bg-slate-700 p-1 rounded-md">
+                            <button onClick={() => setTool('select')} className={`p-2 rounded ${tool === 'select' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Selecionar/Mover"><MoveIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setTool('rect')} className={`p-2 rounded ${tool === 'rect' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Retângulo"><RectangleIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setTool('arrow')} className={`p-2 rounded ${tool === 'arrow' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Seta"><ArrowUpRightIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setTool('text')} className={`p-2 rounded ${tool === 'text' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Texto"><TypeIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setTool('eraser')} className={`p-2 rounded ${tool === 'eraser' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Borracha"><EraserIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setTool('zoom')} className={`p-2 rounded ${tool === 'zoom' ? 'bg-indigo-600' : 'hover:bg-slate-600'}`} title="Zoom"><ZoomInIcon className="w-5 h-5"/></button>
+                        </div>
+                        {/* Color selection */}
+                        <div className="flex items-center gap-2">
+                            {MARKUP_COLORS.map(c => (
+                                <button key={c} onClick={() => setColor(c)} style={{ backgroundColor: c }} className={`w-6 h-6 rounded-full ring-2 ${color === c ? 'ring-indigo-400' : 'ring-transparent hover:ring-slate-400'}`}/>
+                            ))}
+                        </div>
+                        {/* Eraser size */}
+                        {tool === 'eraser' && (
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="eraser-size" className="text-sm text-slate-400">Tamanho:</label>
+                                <input type="range" id="eraser-size" min="5" max="100" value={eraserSize} onChange={e => setEraserSize(Number(e.target.value))} className="w-24"/>
+                            </div>
+                        )}
+                        {/* Download buttons */}
+                        <div className="flex-grow flex justify-end gap-2">
+                            <button onClick={() => handleDownload('png')} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm flex items-center gap-2"><DownloadIcon className="w-4 h-4"/> Baixar PNG</button>
+                            <button onClick={() => handleDownload('jpeg')} className="px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg hover:bg-slate-500 text-sm">Baixar JPG</button>
+                        </div>
+                    </div>
+                    {/* Canvas Area */}
+                    <div className="flex-grow bg-slate-900/50 rounded-lg overflow-hidden relative min-h-[60vh]">
+                        <canvas ref={canvasRef} className="w-full h-full" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} onDoubleClick={() => { if(selectedAnnotationId && annotations.find(a => a.id === selectedAnnotationId)?.type === 'text') setEditingAnnotation(annotations.find(a => a.id === selectedAnnotationId)!) }} onClick={handleCanvasClick} />
+                        {editingAnnotation && (
+                            <textarea
+                                autoFocus
+                                value={editingAnnotation.text}
+                                onChange={(e) => setEditingAnnotation(prev => prev ? {...prev, text: e.target.value} : null)}
+                                onBlur={finishEditingText}
+                                onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finishEditingText(); } }}
                                 style={{
                                     position: 'absolute',
-                                    ...editButtonPosition
+                                    left: `${worldToScreen(editingAnnotation.x, editingAnnotation.y).x}px`,
+                                    top: `${worldToScreen(editingAnnotation.x, editingAnnotation.y).y}px`,
+                                    width: `${editingAnnotation.width * zoom}px`,
+                                    minHeight: `${editingAnnotation.height * zoom}px`,
+                                    fontSize: `${editingAnnotation.fontSize! * zoom}px`,
+                                    lineHeight: 1.2,
+                                    color: editingAnnotation.color,
+                                    background: 'rgba(0,0,0,0.7)',
+                                    border: '1px dashed #3b82f6',
+                                    outline: 'none',
+                                    resize: 'none',
+                                    zIndex: 10,
+                                    overflow: 'hidden',
                                 }}
-                                className="bg-indigo-600 text-white text-xs font-bold py-1 px-3 rounded-md shadow-lg z-20 hover:bg-indigo-500 transition-colors"
-                            >
-                                Editar Texto
-                            </button>
+                                className="text-white p-1 rounded"
+                            />
                         )}
                     </div>
-                    <div className="flex-shrink-0 lg:w-1/3 space-y-6">
-                        <div className="p-4 bg-slate-700/50 rounded-lg space-y-4">
-                            <h4 className="font-semibold text-slate-200">Ferramentas de Anotação</h4>
-                            <div className="grid grid-cols-3 gap-2">
-                                <ToolButton self="select" title="Mover / Selecionar (Delete para apagar)" label="Selecionar"><MoveIcon className="w-5 h-5"/></ToolButton>
-                                <ToolButton self="rect" title="Desenhar Retângulo" label="Retângulo"><RectangleIcon className="w-5 h-5" /></ToolButton>
-                                <ToolButton self="arrow" title="Desenhar Seta" label="Seta"><ArrowUpRightIcon className="w-5 h-5" /></ToolButton>
-                                <ToolButton self="text" title="Adicionar Texto" label="Texto"><TypeIcon className="w-5 h-5" /></ToolButton>
-                                <ToolButton self="eraser" title="Borracha" label="Borracha"><EraserIcon className="w-5 h-5" /></ToolButton>
-                                <ToolButton self="zoom" title="Zoom (arraste verticalmente)" label="Zoom"><ZoomInIcon className="w-5 h-5"/></ToolButton>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-2">Cor da Anotação</label>
-                                <div className="flex flex-wrap justify-center gap-2">{MARKUP_COLORS.map(c => (
-                                    <button key={c} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 transition-all ${color === c ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
-                                ))}</div>
-                            </div>
-                            {tool === 'eraser' && (
-                                <div>
-                                    <label htmlFor="eraser-size" className="block text-sm font-medium text-slate-400 mb-2">Tamanho da Borracha: {eraserSize}px</label>
-                                    <input type="range" id="eraser-size" min="2" max="100" value={eraserSize} onChange={e => setEraserSize(Number(e.target.value))} className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 bg-slate-700/50 rounded-lg space-y-3">
-                            <h4 className="font-semibold text-slate-200">Exportar Imagem</h4>
-                            <button onClick={() => handleDownload('jpeg')} className="w-full p-3 bg-sky-600 text-sm font-semibold rounded hover:bg-sky-500 flex items-center justify-center gap-2"><DownloadIcon className="w-4 h-4" /> Baixar como JPG</button>
-                            <button onClick={() => handleDownload('png')} className="w-full p-3 bg-teal-600 text-sm font-semibold rounded hover:bg-teal-500 flex items-center justify-center gap-2"><DownloadIcon className="w-4 h-4" /> Baixar como PNG</button>
-                        </div>
-                        <button onClick={() => processFile(null)} className="w-full p-3 bg-slate-600 text-sm font-semibold rounded hover:bg-slate-500">Carregar outra imagem</button>
-                    </div>
-                </div>
+                </>
             )}
-            {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
+            {error && <p className="text-red-400 mt-2 text-center">{error}</p>}
         </div>
     );
 };
-
-
-const TextEditor = ({ annotation, onAnnotationChange, onFinish, worldToScreen, zoom }: {
-    annotation: Annotation,
-    onAnnotationChange: (ann: Annotation) => void,
-    onFinish: () => void,
-    worldToScreen: (x: number, y: number) => {x: number, y: number},
-    zoom: number
-}) => {
-    const { x, y, text, fontSize, color, width } = annotation;
-    const screenPoint = worldToScreen(x, y);
-    const editorRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [isResizing, setIsResizing] = useState(false);
-    const resizeStart = useRef({x: 0, width: 0});
-    
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.focus();
-            if(!text) textareaRef.current.select(); // Select default text
-        }
-    }, []);
-
-    // Auto-resize textarea height
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    }, [text, width, zoom, fontSize]);
-
-    const handleFontSizeChange = (delta: number) => {
-        onAnnotationChange({ ...annotation, fontSize: Math.max(8, (fontSize || 16) + delta) });
-    };
-    
-    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        onAnnotationChange({ ...annotation, text: e.target.value });
-    };
-
-    const handleResizeMouseDown = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsResizing(true);
-        resizeStart.current = { x: e.clientX, width: width };
-    };
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isResizing) return;
-            const deltaX = e.clientX - resizeStart.current.x;
-            const newWidth = Math.max(50, resizeStart.current.width + (deltaX / zoom));
-            onAnnotationChange({...annotation, width: newWidth});
-        };
-        const handleMouseUp = () => setIsResizing(false);
-
-        if(isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isResizing, onAnnotationChange, annotation, zoom]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
-                onFinish();
-            }
-        };
-        setTimeout(() => document.addEventListener('mousedown', handleClickOutside), 0);
-        return () => { document.removeEventListener('mousedown', handleClickOutside); };
-    }, [onFinish]);
-
-    return (
-        <div 
-            ref={editorRef}
-            style={{ 
-                position: 'absolute', 
-                left: `${screenPoint.x}px`, 
-                top: `${screenPoint.y}px`,
-                width: `${width * zoom}px`,
-            }}
-            className="z-30 flex flex-col items-start"
-            onPointerDown={(e) => e.stopPropagation()}
-        >
-            <div className="flex flex-wrap items-center gap-1 bg-slate-800 p-1 rounded-t-md shadow-lg">
-                <button onClick={() => handleFontSizeChange(-2)} className="w-6 h-6 bg-slate-600 rounded text-white font-bold flex items-center justify-center hover:bg-slate-500">-</button>
-                <span className="text-xs px-2 text-slate-300 w-8 text-center">{fontSize}pt</span>
-                <button onClick={() => handleFontSizeChange(2)} className="w-6 h-6 bg-slate-600 rounded text-white font-bold flex items-center justify-center hover:bg-slate-500">+</button>
-                <div className="h-6 w-[1px] bg-slate-700 mx-1"></div>
-                {MARKUP_COLORS.map(c => (
-                    <button
-                        key={c}
-                        onClick={() => onAnnotationChange({ ...annotation, color: c })}
-                        className={`w-5 h-5 rounded-full border-2 transition-all ${color === c ? 'border-white' : 'border-slate-400'}`}
-                        style={{ backgroundColor: c }}
-                    />
-                 ))}
-            </div>
-            <div className="relative w-full">
-                <textarea
-                    ref={textareaRef}
-                    value={text}
-                    placeholder="Digite aqui..."
-                    onChange={handleTextChange}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onFinish(); } }}
-                    className="bg-slate-800/80 border-2 border-dashed border-indigo-500 text-white p-1 resize-none focus:outline-none w-full"
-                    style={{
-                        color: color,
-                        fontSize: `${fontSize! * zoom}px`,
-                        lineHeight: 1.2,
-                    }}
-                />
-                <div 
-                    onMouseDown={handleResizeMouseDown}
-                    className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 cursor-nwse-resize rounded-tl-lg"
-                    style={{transform: 'translate(2px, 2px)'}}
-                />
-            </div>
-        </div>
-    );
-};
-
 
 export default ImageAnnotator;
